@@ -1,0 +1,305 @@
+---
+title: "MY470 Week 8 Assignment"
+output: html_document
+---
+
+## Translating Between Python and R: Revisiting K-Means
+
+When you first learn to code, repetition and contextualizing are essential. Through consistent repetition, you start to memorize the specifics of vocabulary and syntax. As you begin seeing the code used in different contextual environments and for different purposes throughout the course you are able to understand how and why different functions and techniques are used. 
+
+But there isn’t necessarily an easy way to connect the new way of thinking to the language you speak, which means that you aren’t just memorizing a word but, instead, you have to develop a new understanding of each programming concept. Even the first line of code you write, `print(“Hello World!”)` requires you to learn how the print function works, how the editor returns a print statement, and when to use quotation marks to define a string. **When you learn a second programming language, you have the benefit of translating concepts from the language you know to the new language to learn more efficiently and quickly.**
+
+In this assignment we will focus on translating what we have learnt in Python to R. The main difference in using the language is that R is a domain-specific programming language, whereas Python is multipurpose. R is more of a statistical tool with a language framework, rather than a well designed language before anything else.
+
+**We will be revisiting the Week 4 assignment where we built a function to implement the k-means algorithm.** 
+
+RStudio is an Integrated Development Environment (IDE) which gives us feedback on our code as we type. We can use the *Global Environment window* in the top left to view the variables and objects loaded for our project. The environment can be thought of as a collection of objects (functions, variables, etc.). An environment is created when we first fire up the R interpreter. Any variable we define is now in this environment. Just below this is the *Help Window* where we can view R documentation.
+
+For each exercise in this assignment, we will specify a function that you should use in your answer. You can use the Help window in RStudio to look up the function and how to use it. You can either directly use the search bar in the Help window, or use the `?` (like we would use `help()` ) in the Console.
+
+### Interfacing with Python
+
+You can run Python directly in R Markdown files. R can also be run directly in Jupyter Notebook and other IDEs.
+
+```{r}
+# Install the packages to run python
+# install.packages("reticulate")
+
+# Load the Interface to python
+# Note the differences with the cell below in loading python libraries.
+library(reticulate)
+```
+
+Now that we have set this up, we can run Python directly in this Markdown file. Note that we change the language in the `{}` in order to switch the language of the cells. When the console is running Python, lines will be prefaced by `>>>` and when we are working with R we will see `>`.
+
+```{python}
+# Importing modules.
+import random
+```
+
+Please note that **you do not need to have Python working in this notebook to complete the assignment.**
+
+### Problem 1: Importing the Customers Data
+
+Read in the data into R with the `read.csv` function (Note that in Python syntax, we do not use `.` in function names). 
+
+```{r}
+
+#setwd("/Users/cengxiaoxiao/Desktop/Britainlife/LSE/courseinfo/MY470materials/assignments/assignment-8-lemmings")
+customer <- read.csv("Wholesale customers data.csv")
+
+
+```
+
+
+### Problem 2: Translating the First Helping Function
+
+Translate the Python code below to write an R function called `get_distance` that computes the Euclidean distance between two points in a multidimensional space. 
+
+```{python}
+def get_distance(x, y):
+    """
+    Estimates the Euclidean distance between two n-dimensional points.
+    Assumes x and y are lists of numerical values (the point coordinates).
+    Returns float (the Euclidean distance between x and y).
+    """
+    
+    sqrs = [(x[i] - y[i])**2 for i in range(len(x))]
+    return math.sqrt(sum(sqrs))
+```
+
+In R, the function definition command is `function()`. Like in Python, the parameter is the variable listed inside the parentheses in the function definition. An argument is the value that is sent to the function when it is called. Like for-loops, we wrap the code that a function calls in `{ }` rather than the mandatory indenting that we use in Python. Both languages use `return` to send the function's result back to the caller but be aware of the difference regarding using brackets with `return`.
+
+Write your R function in the code cell below. You can use the two vectors in the cell to test your code.
+
+```{r}
+v1 <- c(0,3,0)
+v2 <- c(4,0,0)
+get_distance <- function(x,y){
+  sqrs= rep(0)
+  for (i in 1:length(x)){
+    sqrs[i] <- (x[i] - y[i])^2 
+  }
+  return(sqrt(sum(sqrs)))
+}
+
+get_distance(v1,v2)
+
+
+```
+
+### Problem 3: Translating the Second Helping Function
+
+Now translate the Python code below to write an R function called `get_centroid` that computes the centroid of a group of points, where the centroid is defined as the average on each dimension. 
+
+```{python}
+def get_centroid(points):
+    """
+    Estimates the centroid for a collection of n-dimensional points.
+    Assumes points is a collection of lists of numerical values.
+    Returns a list of numerical values (the coordinates of the centroid).
+    """
+    
+    centroid = []
+    num_points = len(points)
+    num_dims = len(points[0])
+    for dim in range(num_dims):
+        coord = [i[dim] for i in points]
+        centroid.append(sum(coord)/num_points)
+        
+    return centroid
+```
+
+Write your R function in the cell below. Use the matrix defined in the cell to test your code.
+
+```{r}
+mm <- matrix(sample(0:1, 8 * 3, replace = TRUE), 8, 3)
+get_centroid<- function(points){
+   centroid <- c()
+   num_points <- nrow(points)
+   num_dims <- ncol(points)
+   for (i in 1:num_dims){
+     coord = (sum(points[,i]))/num_points
+     centroid[i] <-coord
+       
+   }
+   return(centroid)
+}
+
+get_centroid(mm)
+
+```
+
+### Problem 4: Translating the K-Means Function
+
+Finally, translate the Python code below to write an R function called `kmeans` that implements the entire algorithm, including the two functions above. It should take two arguments: the data used to find the clusters and the desired number of clusters. 
+
+```{python}
+def kmeans(points, k):
+    """
+    Clusters data using a naive implementation of the k-means 
+    clustering algorithm. Assumes points is a list of lists 
+    of numerical values (point coordinates) and k is 
+    an integer > 0 specifiying the number of clusters to be used.
+    Returns the k-means clustering after 100 iterations 
+    and a single initialization as a list of k lists (clusters) 
+    of points and a list of k lists of numerical values 
+    (the coordinates of the cluster centroids.)
+    """
+    
+    # Select k random points to use as initial centroids
+    init = random.sample(points, k)
+
+    # Create a list of k lists to contain the points assigned to each cluster.  
+    clusters = [[] for i in init]
+    
+    # Create a list to keep the centroids of the k clusters. 
+    # For now, this list will contain the points from init.
+    centroids = [i for i in init]
+    
+    # Repeat the clustering for 100 iterations.
+    # The idea is that each new repetition refines the clustering 
+    # because it starts from the centroids of the previous clustering.     
+    for i in range(100):
+        # Create a list of lists for the new clustering
+        new_clustering = [[] for i in range(k)]
+        
+        # Assign each point to the cluster with the closest centroid.
+        for p in points:
+            # Start by setting the closest cluster to be the first one
+            min_dist = get_distance(p, centroids[0])
+            closest_clust = 0
+            # Now find the actual closest cluster
+            for i in range(1, k):
+                dist = get_distance(p, centroids[i])
+                if dist < min_dist:
+                    min_dist = dist
+                    closest_clust = i                    
+            # Add the point to the closest cluster
+            new_clustering[closest_clust].append(p)
+            
+        # Now update the clusters and the centroids
+        clusters = new_clustering
+        centroids = [get_centroid(i) for i in clusters]
+    
+    return clusters, centroids
+```
+
+When we wrote this function in Python (above), we ran it for 100 iterations. Here, you should make one change. You should use a standard stopping rule: you should assume the algorithm has converged (and thus you should stop the function) whenever the cluster assignments do not change from one iteration to the next. If you are having convergence issues, you can increase this threshold to only 2-3 observations changing.
+
+When writing the kmeans function consider where you can speed up your code with vectorization. *Vectorization* helps minimize the running time of code efficiently. Specifically, it is the process of converting an algorithm from operating on a single value at a time to operating on a set of values (vector) at one time. To vectorize R code, you can use the apply collection of functions, including `apply()`.
+
+Further, you can use the function `which.min()` to get the location of the (first) minimum value in a numeric vector.
+
+We have some code in the cell to get you started:
+
+```{r}
+kmeans <- function(data, K){
+  
+  #
+  # The function runs a kmeans clustering algorithm and returns a vector with
+  # the final assigned clusters as well as a data frame or matrix (depending on
+  # the input) of dimension K x ncol(data) with the centroids
+  # 
+  
+  # Rows of dataset
+  n <- nrow(data)
+  
+  # Vector which will store cluster assignments
+  clusters <- rep(0, n)
+  
+  # Initialize centroids as K random rows from the data frame
+  # Note that if `data` was a data frame, then `centroids` is a data frame of
+  # dimension K x ncol(data)
+  centroids <- data[sample(1:n, K),]
+
+  # Initial assignment of clusters
+  new_clusters <- rep(NA, n)
+  
+  # ----- Begin your for loop here -----
+  while(1){
+    old_clusters<-clusters
+      for(p in 1:n){
+       min_dist <- get_distance(as.numeric(data[p,]), as.numeric(centroids[1,]))
+       closest_clust <- 1
+       for(i in 1:K){
+         dist <- get_distance(as.numeric(data[p,]), as.numeric(centroids[i,]))
+         if(dist < min_dist){
+           min_dist <- dist
+           closest_clust <- i   
+         }
+         }
+      new_clusters[p]<-closest_clust 
+    
+       }
+       
+       clusters<- new_clusters
+       for(i in 1:K){
+         centroids[i,]<- get_centroid(data[which(clusters==i),])
+       }
+       
+       count_clusters = rep(0,K)
+       for(i in 1:K){
+         count_clusters[i]<-abs(length(clusters[which(clusters==i)])-length(old_clusters[which(old_clusters==i)]))
+         
+       }
+       if(sum(count_clusters)==0){
+         break
+       }
+         
+       }
+    
+        
+      return(list(clusters,centroids))
+        
+      
+
+  
+  
+  
+    # You now need to assign each point to the cluster 
+    # with the closest centroid. Use the get_distance function 
+    # you wrote in Problem 2.a for this. 
+  
+    # You should update the variable "clusters" to be 
+    # the new clustering and update the variable "centroids" 
+    # to contain the centroids of the clusters in this new 
+    # clustering. Use the function you wrote in Problem 2.b 
+    # to estimate the centroids. 
+  
+    # Repeat the process until the algorithm coverage. 
+    # We can do this by checking if the new clusters are 
+    # different to the previous clusters. You can count 
+    # how many observations are assigned to different clusters.
+}
+```
+
+```{r}
+
+```
+
+
+### Problem 5: Testing the K-Means Algorithm on the Data
+
+Test the algorithm you wrote above with the Wholesale Customer data you read in Problem 1. 
+
+```{r}
+result <- kmeans(customer[,3:8],3)
+print(result[[1]])
+print(result[[2]])
+```
+
+
+### Evaluation
+
+| Problem | Mark     | Comment   
+|:-------:|:--------:|:----------------------
+| 1       |   /1     |   
+| 2       |   /2     |      
+| 3       |   /2     |
+| 4       |   /6     |
+| 5       |   /1     |
+| Legibility   |   /2    | 
+| Modularity   |   /2    | 
+| Efficiency   |   /4    | 
+|**Total**|**/20**  | 
