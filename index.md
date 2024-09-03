@@ -1,5 +1,5 @@
 ---
-title: "Gamze's Python Journey "
+title: "Gamze's Python Journey"
 author:
 - Gamze Tekin
 ---
